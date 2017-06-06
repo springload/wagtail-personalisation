@@ -93,3 +93,13 @@ def parse_tag(token, parser):
             args.append(FilterExpression(bit, parser))
 
     return (tag_name, args, kwargs)
+
+
+def full_any(iterable):
+    result = False
+
+    for element in iterable:
+        if element:
+            result = True
+
+    return result

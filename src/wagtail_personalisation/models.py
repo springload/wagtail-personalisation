@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
-import itertools
 
+from django.contrib.sessions.models import Session
 from django.db import models, transaction
 from django.template.defaultfilters import slugify
 from django.utils.encoding import python_2_unicode_compatible
@@ -36,7 +36,6 @@ class Segment(ClusterableModel):
     edit_date = models.DateTimeField(auto_now=True)
     enable_date = models.DateTimeField(null=True, editable=False)
     disable_date = models.DateTimeField(null=True, editable=False)
-    visit_count = models.PositiveIntegerField(default=0, editable=False)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_ENABLED)
     persistent = models.BooleanField(
@@ -81,15 +80,11 @@ class Segment(ClusterableModel):
 
     def get_used_pages(self):
         """Return the pages that have variants using this segment."""
-        pages = list(PersonalisablePageMetadata.objects.filter(segment=self))
-
-        return pages
+        return list(PersonalisablePageMetadata.objects.filter(segment=self))
 
     def get_created_variants(self):
         """Return the variants using this segment."""
-        pages = Page.objects.filter(_personalisable_page_metadata__segment=self)
-
-        return pages
+        return Page.objects.filter(_personalisable_page_metadata__segment=self)
 
     def get_rules(self):
         """Retrieve all rules in the segment."""
@@ -100,12 +95,22 @@ class Segment(ClusterableModel):
 
         return segment_rules
 
+    def get_visits(self):
+        return SegmentVisit.objects.filter(segment=self)
+
     def toggle(self, save=True):
         self.status = (
             self.STATUS_ENABLED if self.status == self.STATUS_DISABLED
             else self.STATUS_DISABLED)
         if save:
             self.save()
+
+
+class SegmentVisit(models.Model):
+    segment = models.ForeignKey(Segment)
+    session = models.CharField(max_length=64, editable=False, null=True)
+    path = models.URLField(max_length=255, editable=False, null=True)
+    visit_date = models.DateTimeField(auto_now_add=True)
 
 
 class PersonalisablePageMetadata(ClusterableModel):

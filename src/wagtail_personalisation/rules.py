@@ -25,6 +25,8 @@ class AbstractBaseRule(models.Model):
         related_query_name="%(app_label)s_%(class)ss"
     )
 
+    visits = models.ManyToManyField('wagtail_personalisation.SegmentVisit')
+
     class Meta:
         abstract = True
         verbose_name = 'Abstract segmentation rule'
@@ -32,9 +34,12 @@ class AbstractBaseRule(models.Model):
     def __str__(self):
         return force_text(self._meta.verbose_name)
 
-    def test_user(self):
+    def test_user(self, request=None, visit=None, validate=False):
         """Test if the user matches this rule."""
-        return True
+        if visit and validate:
+            self.visits.add(visit)
+
+        return validate
 
     def encoded_name(self):
         """Return a string with a slug for the rule."""
@@ -83,8 +88,10 @@ class TimeRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Time Rule')
 
-    def test_user(self, request=None):
-        return self.start_time <= datetime.now().time() <= self.end_time
+    def test_user(self, request=None, visit=None):
+        result = self.start_time <= datetime.now().time() <= self.end_time
+
+        super(TimeRule, self).test_user(request, visit=visit, validate=result)
 
     def description(self):
         return {
@@ -126,9 +133,11 @@ class DayRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Day Rule')
 
-    def test_user(self, request=None):
-        return [self.mon, self.tue, self.wed, self.thu,
+    def test_user(self, request=None, visit=None):
+        result = [self.mon, self.tue, self.wed, self.thu,
                 self.fri, self.sat, self.sun][datetime.today().weekday()]
+
+        super(DayRule, self).test_user(request, visit=visit, validate=result)
 
     def description(self):
         days = (
@@ -164,14 +173,17 @@ class ReferralRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Referral Rule')
 
-    def test_user(self, request):
+    def test_user(self, request, visit=None):
         pattern = re.compile(self.regex_string)
+        result = False
 
         if 'HTTP_REFERER' in request.META:
             referer = request.META['HTTP_REFERER']
             if pattern.search(referer):
-                return True
-        return False
+                result = True
+
+        super(ReferralRule, self).test_user(request, visit=visit,
+                                            validate=result)
 
     def description(self):
         return {
@@ -218,7 +230,7 @@ class VisitCountRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Visit count Rule')
 
-    def test_user(self, request):
+    def test_user(self, request, visit=None):
         operator = self.operator
         segment_count = self.count
 
@@ -227,17 +239,21 @@ class VisitCountRule(AbstractBaseRule):
 
         adapter = get_segment_adapter(request)
 
-        visit_count = adapter.get_visit_count()
+        result = False
+
+        visit_count = adapter.get_page_visits()
         if visit_count and operator == "more_than":
             if visit_count > segment_count:
-                return True
+                result = True
         elif visit_count and operator == "less_than":
             if visit_count < segment_count:
-                return True
+                result = True
         elif visit_count and operator == "equal_to":
             if visit_count == segment_count:
-                return True
-        return False
+                result = True
+
+        super(VisitCountRule, self).test_user(request, visit=visit,
+                                              validate=result)
 
     def description(self):
         return {
@@ -273,8 +289,10 @@ class QueryRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Query Rule')
 
-    def test_user(self, request):
-        return request.GET.get(self.parameter, '') == self.value
+    def test_user(self, request, visit=None):
+        result = request.GET.get(self.parameter, '') == self.value
+
+        super(QueryRule, self).test_user(request, visit=visit, validate=result)
 
     def description(self):
         return {
@@ -309,17 +327,21 @@ class DeviceRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Device Rule')
 
-    def test_user(self, request=None):
+    def test_user(self, request=None, visit=None):
         ua_header = request.META['HTTP_USER_AGENT']
         user_agent = parse(ua_header)
 
+        result = False
+
         if user_agent.is_mobile:
-            return self.mobile
+            result = self.mobile
         if user_agent.is_tablet:
-            return self.tablet
+            result = self.tablet
         if user_agent.is_pc:
-            return self.desktop
-        return False
+            result = self.desktop
+
+        super(DeviceRule, self).test_user(request, visit=visit,
+                                          validate=result)
 
 
 class UserIsLoggedInRule(AbstractBaseRule):
@@ -340,8 +362,11 @@ class UserIsLoggedInRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Logged in Rule')
 
-    def test_user(self, request=None):
-        return request.user.is_authenticated() == self.is_logged_in
+    def test_user(self, request=None, visit=None):
+        result = request.user.is_authenticated() == self.is_logged_in
+
+        super(UserIsLoggedInRule, self).test_user(request, visit=visit,
+                                                  validate=result)
 
     def description(self):
         return {

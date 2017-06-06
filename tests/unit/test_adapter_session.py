@@ -66,7 +66,7 @@ def test_add_page_visit(rf, site):
     adapter.add_page_visit(site.root_page)
     assert request.session['visit_count'][0]['count'] == 2
 
-    assert adapter.get_visit_count() == 2
+    assert adapter.get_page_visits() == 2
 
 
 @pytest.mark.django_db

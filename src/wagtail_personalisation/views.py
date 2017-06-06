@@ -64,8 +64,9 @@ class SegmentModelAdmin(ModelAdmin):
         return len(obj.get_created_variants())
 
     def statistics(self, obj):
+        import pdb; pdb.set_trace()
         return _("{visits} visits in {days} days").format(
-            visits=obj.visit_count, days=obj.get_active_days())
+            visits=len(obj.get_visits()), days=obj.get_active_days())
 
 
 def toggle_segment_view(request):
