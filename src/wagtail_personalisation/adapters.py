@@ -47,7 +47,7 @@ class BaseSegmentsAdapter(object):
         :returns: A boolean indicating the segment matches the request
         :rtype: bool
         """
-        segment_visit = SegmentVisit.objects.create(
+        segment_visit = SegmentVisit(
             segment=segment, session=request.session.session_key,
             path=request.path)
 

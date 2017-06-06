@@ -1,6 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.contrib.sessions.models import Session
 from django.db import models, transaction
 from django.template.defaultfilters import slugify
 from django.utils.encoding import python_2_unicode_compatible
@@ -95,8 +94,22 @@ class Segment(ClusterableModel):
 
         return segment_rules
 
-    def get_visits(self):
-        return SegmentVisit.objects.filter(segment=self)
+    def get_visits(self, all=False):
+        """Retrieve all visits that match this segment.
+
+        :param all: Whether it should return visits made before the segment
+        was enabled the last time
+        :type all: bool
+        :returns: A QuerySet with visits made to this segment or
+        an empty list if there are none
+        :rtype: List of wagtail_personalisation.models.SegmentVisit or
+        an empty list
+        """
+        if all:
+            return SegmentVisit.objects.filter(segment=self)
+        else:
+            return SegmentVisit.objects.filter(segment=self,
+                                               visit_date__gte=self.enable_date)
 
     def toggle(self, save=True):
         self.status = (
