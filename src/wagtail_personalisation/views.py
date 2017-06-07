@@ -5,11 +5,12 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
-from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail.contrib.modeladmin.options import (ModelAdmin, ModelAdminGroup,
+                                                modeladmin_register)
 from wagtail.contrib.modeladmin.views import IndexView
 from wagtail.wagtailcore.models import Page
 
-from wagtail_personalisation.models import Segment
+from wagtail_personalisation.models import Segment, SegmentVisit
 
 
 class SegmentModelIndexView(IndexView):
@@ -32,7 +33,6 @@ class SegmentModelDashboardView(IndexView):
         ]
 
 
-@modeladmin_register
 class SegmentModelAdmin(ModelAdmin):
     """The model admin for the Segments administration interface."""
     model = Segment
@@ -66,6 +66,22 @@ class SegmentModelAdmin(ModelAdmin):
     def statistics(self, obj):
         return _("{visits} visits in {days} days").format(
             visits=len(obj.get_visits()), days=obj.get_active_days())
+
+
+class SegmentVisitModelAdmin(ModelAdmin):
+    model = SegmentVisit
+    menu_icon = 'fa-rocket'
+    list_display = ('path', 'segment', 'user', 'session', 'visit_date')
+    list_filter = ('path', 'segment', 'user')
+    search_fields = ('segment', 'user' 'session')
+
+
+class PersonalisationAdminGroup(ModelAdminGroup):
+    menu_label = 'Personalisation'
+    menu_icon = 'fa-magic'
+    items = (SegmentModelAdmin, SegmentVisitModelAdmin)
+
+modeladmin_register(PersonalisationAdminGroup)
 
 
 def toggle_segment_view(request):
