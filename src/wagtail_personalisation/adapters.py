@@ -35,6 +35,21 @@ class BaseSegmentsAdapter(object):
     def refresh(self):
         """Refresh the segments stored in the adapter storage."""
 
+    def create_segment_visit(self, segment, request):
+        user = request.user if request.user.is_authenticated() else None
+
+        # Reverse match session visits to a user after login
+        if user is not None:
+            unauthenticated_visits = SegmentVisit.objects.filter(
+                session=request.session.session_key, user__isnull=True)
+
+            for visit in unauthenticated_visits:
+                visit.user = user
+                visit.save()
+
+        return SegmentVisit(segment=segment, path=request.path,
+                            session=request.session.session_key, user=user)
+
     def _test_rules(self, segment, rules, request, match_any=False):
         """Tests the provided rules to see if the request still belongs
         to a segment.
@@ -47,10 +62,7 @@ class BaseSegmentsAdapter(object):
         :returns: A boolean indicating the segment matches the request
         :rtype: bool
         """
-        user = request.user if request.user.is_authenticated() else None
-        segment_visit = SegmentVisit(
-            segment=segment, session=request.session.session_key,
-            user=user, path=request.path)
+        segment_visit = self.create_segment_visit(segment, request)
 
         if not rules:
             return False
