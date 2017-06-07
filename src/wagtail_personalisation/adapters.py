@@ -59,9 +59,6 @@ class BaseSegmentsAdapter(object):
             return full_any(rule.test_user(request, visit=segment_visit)
                             for rule in rules)
 
-        for rule in rules:
-            result = rule.test_user(request)
-
         return all(rule.test_user(request, visit=segment_visit)
                    for rule in rules)
 
