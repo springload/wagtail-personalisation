@@ -36,6 +36,16 @@ class BaseSegmentsAdapter(object):
         """Refresh the segments stored in the adapter storage."""
 
     def create_segment_visit(self, segment, request):
+        """Create a segment visit object and check if a authenticated session
+        matches previously unauthenticated visits.
+
+        :param segment: Segment object
+        :type segment: wagtail_personalisation.models.Segment
+        :param request: The http request
+        :type request: django.http.HttpRequest
+        :returns: An uncommitted Segment Visit object
+        :rtype: wagtail_personalisation.models.SegmentVisit
+        """
         user = request.user if request.user.is_authenticated() else None
 
         # Reverse match session visits to a user after login
@@ -53,6 +63,9 @@ class BaseSegmentsAdapter(object):
     def _test_rules(self, segment, rules, request, match_any=False):
         """Tests the provided rules to see if the request still belongs
         to a segment.
+
+        :param segment: Segment object
+        :type segment: wagtail_personalisation.models.Segment
         :param rules: The rules to test for
         :type rules: list of wagtail_personalisation.rules
         :param request: The http request
