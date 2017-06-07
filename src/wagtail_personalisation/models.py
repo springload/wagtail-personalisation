@@ -123,11 +123,28 @@ class Segment(ClusterableModel):
 class SegmentVisit(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
-    session = models.CharField(max_length=64, editable=False, null=True)
+    session = models.CharField(max_length=64, editable=False, null=True,
+                               db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True,
+                             on_delete=models.SET_NULL, db_index=True)
 
     path = models.URLField(max_length=255, editable=False, null=True)
     visit_date = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def reverse_match(user):
+        user_visits = SegmentVisit.objects.filter(user=user)
+
+        for visit in user_visits:
+            SegmentVisit.objects.filter(
+                session=visit.session,
+                user__isnull=True).update(user=user)
+
+    def save(self, *args, **kwargs):
+        super(SegmentVisit, self).save(*args, **kwargs)
+
+        if self.user is not None:
+            self.reverse_match(self.user)
 
 
 class PersonalisablePageMetadata(ClusterableModel):

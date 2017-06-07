@@ -36,8 +36,7 @@ class BaseSegmentsAdapter(object):
         """Refresh the segments stored in the adapter storage."""
 
     def create_segment_visit(self, segment, request):
-        """Create a segment visit object and check if a authenticated session
-        matches previously unauthenticated visits.
+        """Create a segment visit object.
 
         :param segment: Segment object
         :type segment: wagtail_personalisation.models.Segment
@@ -47,16 +46,6 @@ class BaseSegmentsAdapter(object):
         :rtype: wagtail_personalisation.models.SegmentVisit
         """
         user = request.user if request.user.is_authenticated() else None
-
-        # Reverse match session visits to a user after login
-        if user is not None:
-            unauthenticated_visits = SegmentVisit.objects.filter(
-                session=request.session.session_key, user__isnull=True)
-
-            for visit in unauthenticated_visits:
-                visit.user = user
-                visit.save()
-
         return SegmentVisit(segment=segment, path=request.path,
                             session=request.session.session_key, user=user)
 
