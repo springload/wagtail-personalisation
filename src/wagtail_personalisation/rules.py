@@ -34,14 +34,14 @@ class AbstractBaseRule(models.Model):
     def __str__(self):
         return force_text(self._meta.verbose_name)
 
-    def test_user(self, request=None, visit=None, validate=False):
+    def test_user(self, request, visit=None, validation=False):
         """Test if the user matches this rule."""
-        if visit and validate:
+        if visit and validation:
             if visit._state.adding:
                 visit.save(force_insert=True)
             self.visits.add(visit)
 
-        return validate
+        return validation
 
     def encoded_name(self):
         """Return a string with a slug for the rule."""
@@ -90,10 +90,10 @@ class TimeRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Time Rule')
 
-    def test_user(self, request=None, visit=None):
+    def test_user(self, request, visit=None):
         result = self.start_time <= datetime.now().time() <= self.end_time
 
-        super(TimeRule, self).test_user(request, visit=visit, validate=result)
+        return super(TimeRule, self).test_user(request, visit=visit, validation=result)
 
     def description(self):
         return {
@@ -135,11 +135,11 @@ class DayRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Day Rule')
 
-    def test_user(self, request=None, visit=None):
+    def test_user(self, request, visit=None):
         result = [self.mon, self.tue, self.wed, self.thu,
                 self.fri, self.sat, self.sun][datetime.today().weekday()]
 
-        super(DayRule, self).test_user(request, visit=visit, validate=result)
+        return super(DayRule, self).test_user(request, visit=visit, validation=result)
 
     def description(self):
         days = (
@@ -184,8 +184,8 @@ class ReferralRule(AbstractBaseRule):
             if pattern.search(referer):
                 result = True
 
-        super(ReferralRule, self).test_user(request, visit=visit,
-                                            validate=result)
+        return super(ReferralRule, self).test_user(request, visit=visit,
+                                            validation=result)
 
     def description(self):
         return {
@@ -199,7 +199,7 @@ class VisitCountRule(AbstractBaseRule):
     """Visit count rule to segment users based on amount of visits to a
     specified page.
 
-    Matches when the operator and count validate True
+    Matches when the operator and count validation True
     when visiting the set page.
 
     """
@@ -254,8 +254,8 @@ class VisitCountRule(AbstractBaseRule):
             if visit_count == segment_count:
                 result = True
 
-        super(VisitCountRule, self).test_user(request, visit=visit,
-                                              validate=result)
+        return super(VisitCountRule, self).test_user(request, visit=visit,
+                                              validation=result)
 
     def description(self):
         return {
@@ -294,7 +294,7 @@ class QueryRule(AbstractBaseRule):
     def test_user(self, request, visit=None):
         result = request.GET.get(self.parameter, '') == self.value
 
-        super(QueryRule, self).test_user(request, visit=visit, validate=result)
+        return super(QueryRule, self).test_user(request, visit=visit, validation=result)
 
     def description(self):
         return {
@@ -329,7 +329,7 @@ class DeviceRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Device Rule')
 
-    def test_user(self, request=None, visit=None):
+    def test_user(self, request, visit=None):
         ua_header = request.META['HTTP_USER_AGENT']
         user_agent = parse(ua_header)
 
@@ -342,8 +342,8 @@ class DeviceRule(AbstractBaseRule):
         if user_agent.is_pc:
             result = self.desktop
 
-        super(DeviceRule, self).test_user(request, visit=visit,
-                                          validate=result)
+        return super(DeviceRule, self).test_user(request, visit=visit,
+                                          validation=result)
 
 
 class UserIsLoggedInRule(AbstractBaseRule):
@@ -364,11 +364,11 @@ class UserIsLoggedInRule(AbstractBaseRule):
     class Meta:
         verbose_name = _('Logged in Rule')
 
-    def test_user(self, request=None, visit=None):
+    def test_user(self, request, visit=None):
         result = request.user.is_authenticated() == self.is_logged_in
 
-        super(UserIsLoggedInRule, self).test_user(request, visit=visit,
-                                                  validate=result)
+        return super(UserIsLoggedInRule, self).test_user(request, visit=visit,
+                                                  validation=result)
 
     def description(self):
         return {

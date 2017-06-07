@@ -47,9 +47,10 @@ class BaseSegmentsAdapter(object):
         :returns: A boolean indicating the segment matches the request
         :rtype: bool
         """
+        user = request.user if request.user.is_authenticated() else None
         segment_visit = SegmentVisit(
             segment=segment, session=request.session.session_key,
-            path=request.path)
+            user=user, path=request.path)
 
         if not rules:
             return False
@@ -58,7 +59,11 @@ class BaseSegmentsAdapter(object):
             return full_any(rule.test_user(request, visit=segment_visit)
                             for rule in rules)
 
-        return all(rule.test_user(request, visit=segment_visit) for rule in rules)
+        for rule in rules:
+            result = rule.test_user(request)
+
+        return all(rule.test_user(request, visit=segment_visit)
+                   for rule in rules)
 
     class Meta:
         abstract = True

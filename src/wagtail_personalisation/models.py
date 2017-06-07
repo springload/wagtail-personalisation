@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from django.conf import settings
 from django.db import models, transaction
 from django.template.defaultfilters import slugify
 from django.utils.encoding import python_2_unicode_compatible
@@ -120,8 +121,11 @@ class Segment(ClusterableModel):
 
 
 class SegmentVisit(models.Model):
-    segment = models.ForeignKey(Segment)
+    segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     session = models.CharField(max_length=64, editable=False, null=True)
+
     path = models.URLField(max_length=255, editable=False, null=True)
     visit_date = models.DateTimeField(auto_now_add=True)
 
