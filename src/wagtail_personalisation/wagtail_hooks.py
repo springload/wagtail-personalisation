@@ -12,7 +12,7 @@ from wagtail.wagtailcore import hooks
 
 from wagtail_personalisation import admin_urls, models
 from wagtail_personalisation.adapters import get_segment_adapter
-from wagtail_personalisation.models import PersonalisablePageMixin, Segment
+from wagtail_personalisation.models import PersonalisablePageMixin, Segment, SegmentVisit
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,6 @@ def serve_variant(page, request, serve_args, serve_kwargs):
     :rtype: wagtail.wagtailcore.models.Page
 
     """
-    user_segments = []
     if not isinstance(page, PersonalisablePageMixin):
         return
 
@@ -84,6 +83,11 @@ def serve_variant(page, request, serve_args, serve_kwargs):
         metadata = metadata.metadata_for_segments(user_segments)
         if metadata:
             variant = metadata.first().variant.specific
+
+            visit = SegmentVisit.objects.get(pk=request.session['visit_id'])
+            visit.served_segment = variant.personalisation_metadata.segment
+            visit.save()
+
             return variant.serve(request, *serve_args, **serve_kwargs)
 
 

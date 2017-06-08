@@ -37,9 +37,10 @@ class AbstractBaseRule(models.Model):
     def test_user(self, request, visit=None, validation=False):
         """Test if the user matches this rule."""
         if visit and validation:
-            if visit._state.adding:
-                visit.save(force_insert=True)
             self.visits.add(visit)
+
+            if self not in visit.segments:
+                visit.segments.add(self.segment)
 
         return validation
 

@@ -106,11 +106,14 @@ class Segment(ClusterableModel):
         :rtype: List of wagtail_personalisation.models.SegmentVisit or
         an empty list
         """
+        visits = SegmentVisit.objects.filter(segment=self)
         if all:
-            return SegmentVisit.objects.filter(segment=self)
+            return visits
         else:
-            return SegmentVisit.objects.filter(segment=self,
-                                               visit_date__gte=self.enable_date)
+            return visits.filter(visit_date__gte=self.enable_date)
+
+    def get_serves(self):
+        return SegmentVisit.objects.filter(served_segment=self)
 
     def toggle(self, save=True):
         self.status = (
@@ -121,7 +124,9 @@ class Segment(ClusterableModel):
 
 
 class SegmentVisit(models.Model):
-    segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
+    segments = models.ManyToManyField(Segment)
+    served_segment = models.ForeignKey(Segment, on_delete=models.CASCADE,
+                                       related_name='served_segment', null=True)
 
     session = models.CharField(max_length=64, editable=False, null=True,
                                db_index=True)

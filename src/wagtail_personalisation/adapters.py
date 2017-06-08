@@ -35,7 +35,7 @@ class BaseSegmentsAdapter(object):
     def refresh(self):
         """Refresh the segments stored in the adapter storage."""
 
-    def create_segment_visit(self, segment, request):
+    def create_segment_visit(self, request):
         """Create a segment visit object.
 
         :param segment: Segment object
@@ -46,10 +46,11 @@ class BaseSegmentsAdapter(object):
         :rtype: wagtail_personalisation.models.SegmentVisit
         """
         user = request.user if request.user.is_authenticated() else None
-        return SegmentVisit(segment=segment, path=request.path,
-                            session=request.session.session_key, user=user)
+        return SegmentVisit.objects\
+                           .create(user=user, path=request.path,
+                                   session=request.session.session_key)
 
-    def _test_rules(self, segment, rules, request, match_any=False):
+    def _test_rules(self, visit, rules, request, match_any=False):
         """Tests the provided rules to see if the request still belongs
         to a segment.
 
@@ -64,16 +65,14 @@ class BaseSegmentsAdapter(object):
         :returns: A boolean indicating the segment matches the request
         :rtype: bool
         """
-        segment_visit = self.create_segment_visit(segment, request)
-
         if not rules:
             return False
 
         if match_any:
-            return full_any(rule.test_user(request, visit=segment_visit)
+            return full_any(rule.test_user(request, visit=visit)
                             for rule in rules)
 
-        return all(rule.test_user(request, visit=segment_visit)
+        return all(rule.test_user(request, visit=visit)
                    for rule in rules)
 
     class Meta:
@@ -182,6 +181,9 @@ class SessionSegmentsAdapter(BaseSegmentsAdapter):
 
         current_segments = self.get_segments()
 
+        visit = self.create_segment_visit(self.request)
+        self.request.session['visit_id'] = visit.pk
+
         # Run tests on all remaining enabled segments to verify applicability.
         additional_segments = []
         for segment in enabled_segments:
@@ -189,7 +191,7 @@ class SessionSegmentsAdapter(BaseSegmentsAdapter):
             for rule_model in rule_models:
                 segment_rules.extend(rule_model.objects.filter(segment=segment))
 
-            result = self._test_rules(segment, segment_rules, self.request,
+            result = self._test_rules(visit, segment_rules, self.request,
                                       match_any=segment.match_any)
 
             if result:

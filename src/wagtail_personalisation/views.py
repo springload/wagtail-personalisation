@@ -41,7 +41,8 @@ class SegmentModelAdmin(ModelAdmin):
     menu_icon = 'fa-snowflake-o'
     add_to_settings_menu = False
     list_display = ('name', 'persistent', 'match_any', 'status',
-                    'page_count', 'variant_count', 'statistics')
+                    'page_count', 'variant_count', 'visits', 'serves',
+                    'active_days')
     index_view_extra_js = ['js/commons.js', 'js/index.js']
     index_view_extra_css = ['css/index.css']
     form_view_extra_js = ['js/commons.js', 'js/form.js']
@@ -63,15 +64,21 @@ class SegmentModelAdmin(ModelAdmin):
     def variant_count(self, obj):
         return len(obj.get_created_variants())
 
-    def statistics(self, obj):
-        return _("{visits} visits in {days} days").format(
-            visits=len(obj.get_visits()), days=obj.get_active_days())
+    def visits(self, obj):
+        return len(obj.get_visits())
+
+    def serves(self, obj):
+        return len(obj.get_serves())
+
+    def active_days(self, obj):
+        return obj.get_active_days()
 
 
 class SegmentVisitModelAdmin(ModelAdmin):
     model = SegmentVisit
     menu_icon = 'fa-rocket'
-    list_display = ('path', 'segment', 'user', 'session', 'visit_date')
+    list_display = ('path', 'segment', 'served_segment', 'user', 'session',
+                    'visit_date')
     list_filter = ('path', 'segment', 'user')
     search_fields = ('segment', 'user' 'session')
 
