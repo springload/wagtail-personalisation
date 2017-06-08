@@ -68,6 +68,12 @@ class AbstractBaseRule(models.Model):
         return [model for model in apps.get_models()
                 if issubclass(model, AbstractBaseRule)]
 
+    def get_hit_percentage(self):
+        visit_count = self.visits.count()
+        if visit_count > 0:
+            return round((visit_count / self.segment.get_visits().count()) * 100, 2)
+        return float(0)
+
 
 class TimeRule(AbstractBaseRule):
     """Time rule to segment users based on a start and end time.

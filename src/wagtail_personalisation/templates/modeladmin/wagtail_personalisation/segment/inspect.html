@@ -1,0 +1,15 @@
+{% extends "modeladmin/inspect.html" %}
+
+{% block content_main %}
+    {{ block.super }}
+
+    {% block rule_data %}
+        <div class="nice-padding">
+            <h2>Rules</h2>
+            {% for rule in instance.get_rules %}
+                    <h3>{{ rule }} ({{ rule.get_hit_percentage }}%)</h3>
+                    <p>{{ rule.description.title }} {{ rule.description.value }}</p>
+            {% endfor %}
+        </div>
+    {% endblock %}
+{% endblock %}
