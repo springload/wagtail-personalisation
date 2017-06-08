@@ -1,15 +1,38 @@
 {% extends "modeladmin/inspect.html" %}
 
-{% block content_main %}
-    {{ block.super }}
+{% load i18n %}
+{% load wagtailadmin_tags %}
 
-    {% block rule_data %}
-        <div class="nice-padding">
-            <h2>Rules</h2>
-            {% for rule in instance.get_rules %}
-                    <h3>{{ rule }} ({{ rule.get_hit_percentage }}%)</h3>
-                    <p>{{ rule.description.title }} {{ rule.description.value }}</p>
-            {% endfor %}
+{% block content_main %}
+    <div class="row">
+        <div class="col12">
+            <div class="nice-padding">
+                <p class="back"><a href="{{ view.index_url }}" class="icon icon-arrow-left">{% blocktrans with view.verbose_name as model_name %}Back to {{ model_name }} list{% endblocktrans %}</a></p>
+            </div>
         </div>
-    {% endblock %}
+    </div>
+    <div class="row">
+        {% block fields_output %}
+            <div class="col6">
+                <div class="nice-padding">
+                    {{ block.super }}
+                </div>
+            </div>
+        {% endblock %}
+
+        {% block rule_data %}
+            <div class="col6">
+                <div class="nice-padding">
+                    {% if instance.get_rules %}
+                        <dl>
+                        {% for rule in instance.get_rules %}
+                            <dt class="{{ field.type|lower }}">{{ rule }}</dt>
+                            <dd>{{ rule.description.title }} {{ rule.description.value|lower }} ({{ rule.get_hit_percentage }}%)</dd>
+                        {% endfor %}
+                        </dl>
+                    {% endif %}
+                </div>
+            </div>
+        {% endblock %}
+    </div>
 {% endblock %}
