@@ -142,18 +142,13 @@ class SegmentVisit(models.Model):
 
     @staticmethod
     def reverse_match(user):
+        # TODO: Find a way to automate this, preferably without celery.
         user_visits = SegmentVisit.objects.filter(user=user)
 
         for visit in user_visits:
             SegmentVisit.objects.filter(
                 session=visit.session,
                 user__isnull=True).update(user=user)
-
-    def save(self, *args, **kwargs):
-        super(SegmentVisit, self).save(*args, **kwargs)
-
-        if self.user is not None:
-            self.reverse_match(self.user)
 
 
 class PersonalisablePageMetadata(ClusterableModel):
