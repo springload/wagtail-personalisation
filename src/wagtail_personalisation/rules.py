@@ -39,7 +39,7 @@ class AbstractBaseRule(models.Model):
         if visit and validation:
             self.visits.add(visit)
 
-            if self not in visit.segments:
+            if self.segment not in visit.segments.all():
                 visit.segments.add(self.segment)
 
         return validation

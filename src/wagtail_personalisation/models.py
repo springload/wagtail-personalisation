@@ -106,14 +106,18 @@ class Segment(ClusterableModel):
         :rtype: List of wagtail_personalisation.models.SegmentVisit or
         an empty list
         """
-        visits = SegmentVisit.objects.filter(segment=self)
+        visits = SegmentVisit.objects.filter(segments=self)
         if all:
             return visits
         else:
             return visits.filter(visit_date__gte=self.enable_date)
 
-    def get_serves(self):
-        return SegmentVisit.objects.filter(served_segment=self)
+    def get_serves(self, all=False):
+        visits = SegmentVisit.objects.filter(segments=self, served_segment=self)
+        if all:
+            return visits
+        else:
+            return visits.filter(visit_date__gte=self.enable_date)
 
     def toggle(self, save=True):
         self.status = (

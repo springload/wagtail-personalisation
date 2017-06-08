@@ -77,10 +77,13 @@ class SegmentModelAdmin(ModelAdmin):
 class SegmentVisitModelAdmin(ModelAdmin):
     model = SegmentVisit
     menu_icon = 'fa-rocket'
-    list_display = ('path', 'segment', 'served_segment', 'user', 'session',
-                    'visit_date')
-    list_filter = ('path', 'segment', 'user')
-    search_fields = ('segment', 'user' 'session')
+    list_display = ('path', 'segments_display', 'served_segment', 'user',
+                    'session', 'visit_date')
+    list_filter = ('path', 'segments', 'user')
+    search_fields = ('segments', 'user' 'session')
+
+    def segments_display(self, obj):
+        return [segment.__str__() for segment in obj.segments.all()]
 
 
 class PersonalisationAdminGroup(ModelAdminGroup):
